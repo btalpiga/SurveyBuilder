@@ -1,0 +1,96 @@
+html,body,.auth-wrapper{height:100%;}
+.auth-wrapper{display:-ms-flexbox;display:flex;-ms-flex-align:center;align-items:center;background-color:#f5f5f5;}
+.form-signin{width:100%;max-width:330px;padding:15px;margin:auto;}
+.form-signin .checkbox{font-weight:400;}
+.form-signin .form-control{position:relative;box-sizing:border-box;height:auto;padding:10px;font-size:16px;}
+.form-control:focus{box-shadow:none;}
+label{font-weight:500;}
+.container{max-width:600px;}
+.inner-main{padding-top:130px;width:100%;}
+
+
+
+.sv_main .sv_container .sv_body .sv_p_root table td{
+    padding: 0.5em!important;
+    display: block!important;
+  }
+
+  .sv_main .sv_container .sv_body{
+    padding:0!important;
+  }
+
+
+  .sv_main.sv_default_css .sv_body{
+    border-color:white!important;
+  }
+
+.sv_body.sv_completed_page,�p{
+    text-indent: 20px;
+    margin-top: 50%;
+    margin-bottom: 50%;
+    color: #4CAF50;
+    font-weight: bolder;
+  }
+
+
+  .card-signin .card-body{    
+    padding:15px!important;
+  }
+
+
+  .sv_main.sv_default_css input[type="button"], .sv_default_css button {
+    color: white;
+    background-color: rgb(10, 163, 132);
+    font-size: 18px;
+    border-radius: 15px;
+    box-shadow: 0 16px 6px 0 rgba(0,0,0,0.2), 0 16px 18px 0 rgba(0,0,0,0.19);
+}
+
+
+.card {
+  position: relative;
+  display: -webkit-box;
+  display: flex;
+  -webkit-box-orient: vertical;
+  -webkit-box-direction: normal;
+  flex-direction: column;
+  min-width: 0;
+  word-wrap: break-word;
+  background-color: #fff;
+  background-clip: border-box;
+  border: 1px solid rgba(0,0,0,.125);
+  border-radius: .25rem;
+  border-radius: 25px;
+  box-shadow: 0 16px 6px 0 rgba(0,0,0,0.2), 0 16px 18px 0 rgba(0,0,0,0.19)!important;
+}
+
+
+
+
+/* .sv_main .sv_container .sv_body .sv_p_root>.sv_row {
+  padding: 0;
+   border-radius: 25px; 
+  box-shadow: 0 16px 6px 0 rgba(0,0,0,0.2), 0 16px 18px 0 rgba(0,0,0,0.19)!important;
+} */
+
+/* .sv_main .sv_container .sv_body .sv_p_root .sv_q {
+  padding: .5em 1em 1.5em;
+  box-sizing: border-box;
+  overflow: auto;
+  border-radius: 15px!important;
+  box-shadow: 0 16px 6px 0 rgba(0,0,0,0.2), 0 16px 18px 0 rgba(0,0,0,0.19)!important;
+} */
+.sv_main .sv_container .sv_body .sv_p_root .sv_q {
+  box-sizing: border-box;
+  /* border-radius: 15px!important; */
+  box-shadow: 0 6px 6px 0 rgba(0,0,0,.2),0 6px 8px 0 rgba(0,0,0,.19)!important;
+}
+
+.sv_main.sv_default_css .sv_p_root > .sv_row {
+  border-color: rgb(231, 231, 231);
+  margin-top: 3px;
+}
+
+.sv_q_required_text{
+  display:none;
+}
