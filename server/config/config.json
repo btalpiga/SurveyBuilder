@@ -19,8 +19,8 @@
     "jwtSecret":"nodeauthsecret"
   },
   "test": {
-    "username": "postgres",
-    "password": "1234",
+    "username": "btalpiga",
+    "password": "root",
     "database": "surveys",
     "host": "127.0.0.1",
     "dialect": "postgres",
@@ -29,7 +29,13 @@
       "max": 5,
       "min": 0,
       "idle": 10000
-    }
+    },
+    "frontend_port":"4000",
+    "crypto":{
+      "algorithm": "aes256",
+      "key" : "#kLo;@29O"
+    },
+    "jwtSecret": "ojdS&*j3DDu_1"
   },
   "production": {
     "username": "btalpiga",
