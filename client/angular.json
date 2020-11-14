@@ -3,17 +3,18 @@
   "version": 1,
   "newProjectRoot": "projects",
   "projects": {
-    "angular-meanstack-authentication": {
+    "sueveyClient": {
       "projectType": "application",
       "schematics": {},
       "root": "",
       "sourceRoot": "src",
       "prefix": "app",
       "architect": {
+
         "build": {
           "builder": "@angular-devkit/build-angular:browser",
           "options": {
-            "outputPath": "dist/angular-meanstack-authentication",
+            "outputPath": "dist",
             "index": "src/index.html",
             "main": "src/main.ts",
             "polyfills": "src/polyfills.ts",
@@ -81,23 +82,26 @@
             }
           }
         },
+
         "serve": {
           "builder": "@angular-devkit/build-angular:dev-server",
           "options": {
-            "browserTarget": "angular-meanstack-authentication:build"
+            "browserTarget": "sueveyClient:build"
           },
           "configurations": {
             "production": {
-              "browserTarget": "angular-meanstack-authentication:build:production"
+              "browserTarget": "sueveyClient:build:production"
             }
           }
         },
+
         "extract-i18n": {
           "builder": "@angular-devkit/build-angular:extract-i18n",
           "options": {
-            "browserTarget": "angular-meanstack-authentication:build"
+            "browserTarget": "sueveyClient:build"
           }
         },
+
         "test": {
           "builder": "@angular-devkit/build-angular:karma",
           "options": {
@@ -115,6 +119,7 @@
             "scripts": []
           }
         },
+
         "lint": {
           "builder": "@angular-devkit/build-angular:tslint",
           "options": {
@@ -128,20 +133,22 @@
             ]
           }
         },
+
         "e2e": {
           "builder": "@angular-devkit/build-angular:protractor",
           "options": {
             "protractorConfig": "e2e/protractor.conf.js",
-            "devServerTarget": "angular-meanstack-authentication:serve"
+            "devServerTarget": "sueveyClient:serve"
           },
           "configurations": {
             "production": {
-              "devServerTarget": "angular-meanstack-authentication:serve:production"
+              "devServerTarget": "sueveyClient:serve:production"
             }
           }
         }
+
       }
     }
   },
-  "defaultProject": "angular-meanstack-authentication"
+  "defaultProject": "sueveyClient"
 }

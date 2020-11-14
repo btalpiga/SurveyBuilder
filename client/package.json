@@ -4,7 +4,7 @@
   "scripts": {
     "ng": "ng",
     "start": "ng serve ",
-    "build": "node --max_old_space_size=8192 ./node_modules/@angular/cli/bin/ng build --prod --aot --vendor-chunk=true  --delete-output-path --buildOptimizer --optimization && gzipper --verbose ./dist/angular-meanstack-authentication",
+    "build": "node --max_old_space_size=8192 ./node_modules/@angular/cli/bin/ng build --prod --aot --vendor-chunk=true  --delete-output-path --buildOptimizer --optimization",
     "build-stats": "ng build --stats-json",
     "build-map": "ng build --prod --source-map",
     "bild": "ng build --prod --aot --vendor-chunk=true --common-chunk=true  --delete-output-path --buildOptimizer",
