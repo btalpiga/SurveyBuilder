@@ -21,6 +21,8 @@ export class FillSurveyComponent {
   ) {
    
      this.totalNoQuestions = this.getTotalNoQuestion(JSON.parse(this.route.snapshot.data.userdata.form));
+     this.totalNoPages = JSON.parse(this.route.snapshot.data.userdata.form).pages.length-1;
+
      console.log('--route param--',JSON.parse(this.route.snapshot.data.userdata.form)  );
      this.json=JSON.parse(this.route.snapshot.data.userdata.form);
  
@@ -34,10 +36,13 @@ export class FillSurveyComponent {
  currentSurvey=0;
  currentConsumer=0;
  totalNoQuestions=0;
+ totalNoPages=0;
+
  private routeSub:any; 
 
  getTotalNoQuestion(survey){
     var pages =survey.pages;
+    console.log('---------- MAX PAGES NO -------- +++',pages);
     let qs=0;
     try{
         for(let idx=0; idx < pages.length ; idx++){
@@ -51,7 +56,7 @@ export class FillSurveyComponent {
 
   ngOnInit() {
     var that = this;
-     window.scrollTo(0, 0);
+  
     // this.surveyService.get(this.route.snapshot.params.id)
     // .subscribe((res) => {
     //   console.log(res);
@@ -87,7 +92,8 @@ export class FillSurveyComponent {
       data:result.data
     } , 
     // '50'
-    (Object.keys(result.data).length/this.totalNoQuestions)*100
+    // (Object.keys(result.data).length/this.totalNoQuestions)*100
+    (result.currentPageNo+1)*100/this.totalNoPages
     ,
     this.currentConsumer, this.currentSurvey).subscribe((res) => {
    console.log(res);
@@ -97,14 +103,16 @@ export class FillSurveyComponent {
   nextPageSurveyData(result) {
     // console.log(result.currentPageNo,result.data);
     // return;
-   window.scrollTo(0, 0);
+    window.scrollTo(0, 0);
    if(Object.keys(result.data).length >0){
    this.answerService.save({
     currentPageNo:result.currentPageNo,
     data:result.data
    } ,  
   //  '50'
-   (Object.keys(result.data).length/this.totalNoQuestions)*100
+  //  (Object.keys(result.data).length/this.totalNoQuestions)*100
+  (result.currentPageNo+1)*100/this.totalNoPages
+
    , this.currentConsumer, this.currentSurvey).subscribe((res) => {
     console.log(res);
    }) 
