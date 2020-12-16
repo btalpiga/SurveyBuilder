@@ -419,6 +419,8 @@ router.post('/answer/save',
     req.body.consumer_id = JSON.parse(decrypted).consumer_id + ''
 
     var body = req.body;
+    body.progress = body.progress?req.body.progress:0;
+    body.progress = parseInt(Math.min(100,Math.round(body.progress)));
     links_statistics
       .find({
         where: {
@@ -429,7 +431,7 @@ router.post('/answer/save',
       .then((stat) => {
         links_statistics
           .update({
-            progress: parseInt(body.progress),
+            progress: body.progress ,
             updatedAt: body.createdAt
           }, {
             where: {
@@ -470,6 +472,8 @@ router.post('/answer/save',
             })
             .catch((error) => res.status(400).send(error));
         } else {
+          req.body.progress=parseInt(Math.min(100,Math.round( req.body.progress)))+ '';
+          req.body.progress = req.body.progress?req.body.progress:0;
           Answer
             .create(req.body)
             .then((answer) => res.status(201).send(answer))
