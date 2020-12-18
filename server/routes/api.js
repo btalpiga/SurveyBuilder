@@ -10,6 +10,7 @@ const Answer = require('../models').Answers;
 const Reports = require('../models').Reports;
 const links_statistics = require('../models').links_statistics;
 const db = require('../models');
+const moment = require('moment');
 
 
 
@@ -419,8 +420,8 @@ router.post('/answer/save',
     req.body.consumer_id = JSON.parse(decrypted).consumer_id + ''
 
     var body = req.body;
-    body.progress = body.progress?req.body.progress:0;
-    body.progress = parseInt(Math.min(100,Math.round(body.progress)));
+    body.progress = body.progress ? req.body.progress : 0;
+    body.progress = parseInt(Math.min(100, Math.round(body.progress)));
     links_statistics
       .find({
         where: {
@@ -431,7 +432,7 @@ router.post('/answer/save',
       .then((stat) => {
         links_statistics
           .update({
-            progress: body.progress ,
+            progress: body.progress,
             updatedAt: body.createdAt
           }, {
             where: {
@@ -472,8 +473,8 @@ router.post('/answer/save',
             })
             .catch((error) => res.status(400).send(error));
         } else {
-          req.body.progress=parseInt(Math.min(100,Math.round( req.body.progress)))+ '';
-          req.body.progress = req.body.progress?req.body.progress:0;
+          req.body.progress = parseInt(Math.min(100, Math.round(req.body.progress))) + '';
+          req.body.progress = req.body.progress ? req.body.progress : 0;
           Answer
             .create(req.body)
             .then((answer) => res.status(201).send(answer))
@@ -661,6 +662,71 @@ router.post('/survey/generate-link-bulk',
 
   });
 
+
+router.post('/survey/generate-link-2', function (req, res) {
+  let surveyId = req.body.surveyId;
+  let consumerId = req.body.consumerId;
+  let subCampaignId = req.body.subcampaignId;
+  let skuBought = req.body.skuBought;
+  let domainName = req.body.domainName;
+  let crmPlatform = req.body.crmPlatform;// one of r=rmc, l=rrp, t=test
+  let callbackPath = `${crmPlatform}/${consumerId}/${subCampaignId}`; //r/{{id_crm}}/{{subcampaign_id}}
+  let triggerEventId = req.body.triggerEventId;
+  let statistics = {
+    consumer_id: consumerId,
+    trigger_event_id: triggerEventId,
+    params: req.body,
+    date_created: new Date(),
+    date_updated: new Date(),
+    progress: 0,
+    accessed: 0,
+    sub_campaign_id: subCampaignId,
+    flags: 1,
+    survey_id: surveyId
+  };
+  let cipher = crypto.createCipher(config.crypto.algorithm, config.crypto.key);
+  let encrypted = cipher.update(JSON.stringify({
+    consumer_id: consumerId,
+    survey_id: surveyId
+  }), 'utf8', 'hex') + cipher.final('hex');
+
+  return Survey.findByPk(surveyId).then((survey) => {
+    if (survey.status == 2) {
+      let link = domainName + '/fill-survey/' + encrypted + '/' + consumerId;
+      let dataShortLink = {
+        apikey: 'API_KEY_HUB_R6CKNYY443D56JUH49G79H2RST8Q2WZ8',
+        url: link,
+        callbackurl: callbackPath
+      };
+      statistics.link = link;
+
+      return axios.post('http://fr3.ro/createshortforurl',
+        qs.stringify(dataShortLink),
+        { headers: { 'Content-Type': 'application/x-www-form-urlencoded' } })
+        .then((result) => {
+          statistics.short_url = result.data.shorturl;
+          return links_statistics.create(statistics).then(() => {
+            //send action for notification to CRM
+            actionExtraParams = {
+              trigger_subcampaign: subCampaignId,
+              sku_bought: skuBought,
+              short_url: result.data.shorturl
+            }
+            return sendCrmAction(crmPlatform, consumerId, subCampaignId, actionExtraParams).then(rez=>{
+              return finalResponse.status(200).json({ success: true, link: result.data.shorturl });
+            })
+          })
+        })
+    } else {
+      return res.status(200).json({ success: false, message: 'Survey not active!' });
+    }
+  })
+    .catch((error) => {
+      console.error(error);
+      return res.status(400).send(error);
+    });
+});
+
 router.post('/survey/generate-link',
   // passport.authenticate('jwt', {    session: false  }),
   function (req, res) {
@@ -722,8 +788,8 @@ router.post('/survey/generate-link',
             .then((result) => {
               statistics.short_url = result.data.shorturl;
               console.log('====SAVE ===>', statistics);
-              return links_statistics.create(statistics).then(()=>{
-                return finalResponse.status(200).send({link: result.data.shorturl});
+              return links_statistics.create(statistics).then(() => {
+                return finalResponse.status(200).send({ link: result.data.shorturl });
               })
             })
         } else {
@@ -752,5 +818,54 @@ getToken = function (headers) {
     return null;
   }
 };
+
+sendCrmAction = function (crmPlatform, consumerId, subcampaignId, actionExtraParams) {
+  if(crmPlatform === 'r'){
+    crmPlatform = 'rmc'
+  }else if(crmPlatform === 'l'){
+    crmPlatform = 'rrp';
+  }else{
+    crmPlatform = 'test';
+  }
+  let crmDetails = config.crms[crmPlatform];
+  const defaultO2OSurveySubcampaign = 10000;
+  const actionName = 'send generic sms';
+  let externalSystemId = crmDetails.externalSystemId;
+  let endpoint = `${crmDetails.host}/api/action/add-consumer-action`;
+  const subcampaignMapping = {
+    //win
+    4603: defaultO2OSurveySubcampaign,
+
+    5828: defaultO2OSurveySubcampaign,
+    5827: defaultO2OSurveySubcampaign,
+    5469: defaultO2OSurveySubcampaign,
+    5621: defaultO2OSurveySubcampaign,
+    5622: defaultO2OSurveySubcampaign,
+    //sob
+    4529: defaultO2OSurveySubcampaign,
+    5607: defaultO2OSurveySubcampaign,
+    5608: defaultO2OSurveySubcampaign,
+    //cam
+    5609: defaultO2OSurveySubcampaign,
+  };
+
+  
+  let action = {
+    external_system_id: externalSystemId,
+    consumer_id: consumerId,
+    campaign_id: subcampaignMapping[subcampaignId] || defaultO2OSurveySubcampaign,
+    action: actionName,
+    timestamp: moment().format('YYYY-MM-DD HH:mm:ss'),
+    params: actionExtraParams
+  };
+  
+  return axios.post(endpoint, action).then(rez => {
+    if (rez.data.status === 1) {
+      return { success: true, result: rez.data };
+    } else {
+      return Promise.reject({ success: false, message: rez.data.message })
+    }
+  });
+}
 
 module.exports = router;

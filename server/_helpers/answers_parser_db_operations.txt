@@ -1,0 +1,147 @@
+psql -U btalpiga -d surveys -h 10.100.1.12 -c "\copy 
+(select a.consumer_id, ls.trigger_event_id, a.answer
+from \"Answers\" a join \"Surveys\" s on a.survey_id::int = s.id 
+join links_statistics ls on ls.consumer_id = a.consumer_id and ls.survey_id = a.survey_id::int
+where a.\"createdAt\" <= date(now()) and a.progress::double precision = 100
+and s.id = 3
+order by survey_name desc, consumer_id) to '/tmp/ba_121_answers.txt' delimiter '^'";
+psql -U btalpiga -d surveys -h 10.100.1.12 -c "\copy 
+(select a.consumer_id, ls.trigger_event_id, a.answer
+from \"Answers\" a join \"Surveys\" s on a.survey_id::int = s.id 
+join links_statistics ls on ls.consumer_id = a.consumer_id and ls.survey_id = a.survey_id::int
+where a.\"createdAt\" <= date(now()) and a.progress::double precision = 100
+and s.id = 4
+order by survey_name desc, consumer_id) to '/tmp/infoLine_121_answers.txt' delimiter '^'";
+--run node script parser
+create table reports_o2o_tmp_ba (survey_id text,consumer_id text,trigger_action text,"question1" text,"question2" text,"question3" text,"question4" text,"question5_Row 1" text,"question5_Row 2" text,"question5_Row 3" text,"question5_Row 4" text,"question5_Row 5" text,"question5_Row 6" text,"question5_Row 7" text,"question6_Row 1" text,"question6_Row 2" text,"question6_Row 3" text,"question6_Row 4" text,"question6_Row 5" text,"question6_Row 6" text,"question6_Row 7" text,"question7_Row 1" text,"question7_Row 2" text,"question7_Row 3" text,"question8_Row 1" text,"question8_Row 2" text,"question8_Row 3" text,"question8_Row 4" text,"question8_Row 5" text,"question9" text,"question10_Row 1" text,"question10_Row 2" text,"question10_Row 3" text,"question10_Row 4" text,"question10_Row 5" text,"question10_Row 6" text,"question11_r1" text,"question12_r1" text,"question13_r1" text,"question14" text,"question15_r1" text,"question16" text,"question17" text,"question18" text,"question19" text,"question20" text,"question21" text,"question22" text,"question23" text,"question24" text,"question25" text,"question26" text,"question27" text);
+psql -U btalpiga -h localhost -d hcrm -c "\copy reports_o2o_tmp_ba from '/tmp/ba_121_report.csv' csv delimiter '^' header";
+select * from reports_o2o_tmp_ba;
+alter table reports_o2o_tmp_ba add column "question11_r2" text;
+alter table reports_o2o_tmp_ba add column "question12_r2" text;
+alter table reports_o2o_tmp_ba add column "question13_r2" text;
+alter table reports_o2o_tmp_ba add column "question15_r2" text;
+update reports_o2o_tmp_ba 
+set 
+"question11_r2" = case when position(',' in "question11_r1")>0 then substring("question11_r1", position(',' in "question11_r1")+1 ) else null end,
+"question11_r1" = case when position(',' in "question11_r1")>0 then substring("question11_r1", 1, position(',' in "question11_r1")-1) else "question11_r1" end,
+"question12_r2" = case when position(',' in "question12_r1")>0 then substring("question12_r1", position(',' in "question12_r1")+1 ) else null end,
+"question12_r1" = case when position(',' in "question12_r1")>0 then substring("question12_r1", 1, position(',' in "question12_r1")-1) else "question12_r1" end,
+"question13_r2" = case when position(',' in "question13_r1")>0 then substring("question13_r1", position(',' in "question13_r1")+1 ) else null end,
+"question13_r1" = case when position(',' in "question13_r1")>0 then substring("question13_r1", 1, position(',' in "question13_r1")-1) else "question13_r1" end,	
+"question15_r2" = case when position(',' in "question15_r1")>0 then substring("question15_r1", position(',' in "question15_r1")+1 ) else null end,
+"question15_r1" = case when position(',' in "question15_r1")>0 then substring("question15_r1", 1, position(',' in "question15_r1")-1) else "question15_r1" end
+;
+--truncate table tmp; --on rmc and datawarehouse
+psql -U btalpiga -d hcrm -h localhost -c "\copy (select trigger_action from reports_o2o_tmp_ba) to '/tmp/action_id.csv' delimiter ','";
+psql -U 3nyble -d hcrm -h 10.100.1.7 -c "\copy tmp from '/tmp/action_id.csv' delimiter ','"; --pass=wzMvS4jm5k
+psql -U btalpiga -d hcrm -h localhost -c "\copy (select consumer_id from reports_o2o_tmp_ba) to '/tmp/consumer_id.csv' delimiter ','";
+psql -U postgres -d datawarehouse -h 10.100.1.17 -c "\copy tmp from '/tmp/consumer_id.csv' delimiter ','"; 
+alter table reports_o2o_tmp_ba add column sex text;
+alter table reports_o2o_tmp_ba add column ba_id text;
+alter table reports_o2o_tmp_ba add column affinity_brand text;
+update reports_o2o_tmp_ba r
+set sex = q.gender, ba_id = q.ba_id 
+from (
+	select * from dblink('dbname=hcrm port=5432 host=10.100.1.7 user=3nyble password=wzMvS4jm5k',
+	$$ 
+	select ca.id_consumer as consumer_id, ca.id as trigger_id, gender, ca.value->>'one2one_ba_id' as ba_id from consumer c
+	join consumer_action ca on c.id = ca.id_consumer 
+	where ca.id in (select id from tmp);
+	$$) as r(consumer_id int, trigger_id int, gender text, ba_id text)
+) q 
+where r.consumer_id::int = q.consumer_id and r.trigger_action::int = q.trigger_id;
+update reports_o2o_tmp_ba r
+set affinity_brand = q.affinity_brand
+from (
+	select * from dblink('dbname=datawarehouse port=5432 host=10.100.1.17 user=postgres password=postgres10@',
+	$$ 
+	select consumer_id, payload->'affinityRmc'->>'value' from consumers 
+	where system_id = 1 and consumer_id in (select id from tmp)
+	$$) as r(consumer_id int, affinity_brand text)
+) q 
+where r.consumer_id::int = q.consumer_id;
+select * from reports_o2o_tmp_ba where ba_id is null or sex is null;
+select * from reports_o2o_tmp_ba where affinity_brand is null;
+select count(survey_id) as survey_id ,count(consumer_id) as consumer_id ,count(trigger_action) as trigger_action ,count("question1") as "question1" ,count("question2") as "question2" ,count("question3") as "question3" ,count("question4") as "question4" ,count("question5_Row 1") as "question5_Row 1" ,count("question5_Row 2") as "question5_Row 2" ,count("question5_Row 3") as "question5_Row 3" ,count("question5_Row 4") as "question5_Row 4" ,count("question5_Row 5") as "question5_Row 5" ,count("question5_Row 6") as "question5_Row 6" ,count("question5_Row 7") as "question5_Row 7" ,count("question6_Row 1") as "question6_Row 1" ,count("question6_Row 2") as "question6_Row 2" ,count("question6_Row 3") as "question6_Row 3" ,count("question6_Row 4") as "question6_Row 4" ,count("question6_Row 5") as "question6_Row 5" ,count("question6_Row 6") as "question6_Row 6" ,count("question6_Row 7") as "question6_Row 7" ,count("question7_Row 1") as "question7_Row 1" ,count("question7_Row 2") as "question7_Row 2" ,count("question7_Row 3") as "question7_Row 3" ,count("question8_Row 1") as "question8_Row 1" ,count("question8_Row 2") as "question8_Row 2" ,count("question8_Row 3") as "question8_Row 3" ,count("question8_Row 4") as "question8_Row 4" ,count("question8_Row 5") as "question8_Row 5" ,count("question9") as "question9" ,count("question10_Row 1") as "question10_Row 1" ,count("question10_Row 2") as "question10_Row 2" ,count("question10_Row 3") as "question10_Row 3" ,count("question10_Row 4") as "question10_Row 4" ,count("question10_Row 5") as "question10_Row 5" ,count("question10_Row 6") as "question10_Row 6" ,count("question11_r1") as "question11_r1" ,count("question12_r1") as "question12_r1" ,count("question13_r1") as "question13_r1" ,count("question14") as "question14" ,count("question15_r1") as "question15_r1" ,count("question16") as "question16" ,count("question17") as "question17" ,count("question18") as "question18" ,count("question19") as "question19" ,count("question20") as "question20" ,count("question21") as "question21" ,count("question22") as "question22" ,count("question23") as "question23" ,count("question24") as "question24" ,count("question25") as "question25" ,count("question26") as "question26" ,count("question27") as "question27"  from reports_o2o_tmp_ba;
+alter table reports_o2o_tmp_ba drop column question14;
+alter table reports_o2o_tmp_ba drop column question16;
+alter table reports_o2o_tmp_ba drop column question17;
+alter table reports_o2o_tmp_ba drop column question18;
+alter table reports_o2o_tmp_ba drop column question19;
+alter table reports_o2o_tmp_ba drop column question20;
+alter table reports_o2o_tmp_ba drop column question26;
+
+create table reports_o2o_tmp_info (survey_id text,consumer_id text,trigger_action text,"question1" text,"question2" text,"question3" text,"question4" text,"question5_Row 1" text,"question5_Row 2" text,"question5_Row 3" text,"question5_Row 4" text,"question5_Row 5" text,"question5_Row 6" text,"question5_Row 7" text,"question6_Row1" text,"question6_Row 2" text,"question6_Row 3" text,"question6_Row 4" text,"question6_Row 5" text,"question6_Row 6" text,"question6_Row 7" text,"question7_Row 1" text,"question7_Row 2" text,"question8_Row 1" text,"question8_Row 2" text,"question8_Row 3" text,"question8_Row 4" text,"question8_Row 5" text,"question9" text,"question10" text,"question11_r1" text,"question12_r1" text,"question13_r1" text,"question14" text,"question15_r1" text,"question16" text,"question17" text,"question18" text,"question19" text,"question20" text,"question21" text,"question22" text,"question23" text,"question24" text,"question25" text,"question26" text,"question27" text);
+psql -U btalpiga -h localhost -d hcrm -c "\copy reports_o2o_tmp_info from '/tmp/infoLine_121_report.csv' csv delimiter '^' header";
+select * from reports_o2o_tmp_info;
+alter table reports_o2o_tmp_info add column "question11_r2" text;
+alter table reports_o2o_tmp_info add column "question12_r2" text;
+alter table reports_o2o_tmp_info add column "question13_r2" text;
+alter table reports_o2o_tmp_info add column "question15_r2" text;
+update reports_o2o_tmp_info 
+set 
+"question11_r2" = case when position(',' in "question11_r1")>0 then substring("question11_r1", position(',' in "question11_r1")+1 ) else null end,
+"question11_r1" = case when position(',' in "question11_r1")>0 then substring("question11_r1", 1, position(',' in "question11_r1")-1) else "question11_r1" end,
+"question12_r2" = case when position(',' in "question12_r1")>0 then substring("question12_r1", position(',' in "question12_r1")+1 ) else null end,
+"question12_r1" = case when position(',' in "question12_r1")>0 then substring("question12_r1", 1, position(',' in "question12_r1")-1) else "question12_r1" end,
+"question13_r2" = case when position(',' in "question13_r1")>0 then substring("question13_r1", position(',' in "question13_r1")+1 ) else null end,
+"question13_r1" = case when position(',' in "question13_r1")>0 then substring("question13_r1", 1, position(',' in "question13_r1")-1) else "question13_r1" end,	
+"question15_r2" = case when position(',' in "question15_r1")>0 then substring("question15_r1", position(',' in "question15_r1")+1 ) else null end,
+"question15_r1" = case when position(',' in "question15_r1")>0 then substring("question15_r1", 1, position(',' in "question15_r1")-1) else "question15_r1" end
+;
+--truncate table tmp; --on rmc and datawarehouse
+psql -U btalpiga -d hcrm -h localhost -c "\copy (select trigger_action from reports_o2o_tmp_info) to '/tmp/action_id.csv' delimiter ','";
+psql -U 3nyble -d hcrm -h 10.100.1.7 -c "\copy tmp from '/tmp/action_id.csv' delimiter ','"; --pass=wzMvS4jm5k
+psql -U btalpiga -d hcrm -h localhost -c "\copy (select consumer_id from reports_o2o_tmp_info) to '/tmp/consumer_id.csv' delimiter ','";
+psql -U postgres -d datawarehouse -h 10.100.1.17 -c "\copy tmp from '/tmp/consumer_id.csv' delimiter ','"; 
+alter table reports_o2o_tmp_info add column sex text;
+alter table reports_o2o_tmp_info add column ba_id text;
+alter table reports_o2o_tmp_info add column affinity_brand text;
+update reports_o2o_tmp_info r
+set sex = q.gender, ba_id = q.ba_id 
+from (
+	select * from dblink('dbname=hcrm port=5432 host=10.100.1.7 user=3nyble password=wzMvS4jm5k',
+	$$ 
+	select ca.id_consumer as consumer_id, ca.id as trigger_id, gender, ca.value->>'one2one_ba_id' as ba_id from consumer c
+	join consumer_action ca on c.id = ca.id_consumer 
+	where ca.id in (select id from tmp);
+	$$) as r(consumer_id int, trigger_id int, gender text, ba_id text)
+) q 
+where r.consumer_id::int = q.consumer_id and r.trigger_action::int = q.trigger_id;
+update reports_o2o_tmp_info r
+set affinity_brand = q.affinity_brand
+from (
+	select * from dblink('dbname=datawarehouse port=5432 host=10.100.1.17 user=postgres password=postgres10@',
+	$$ 
+	select consumer_id, payload->'affinityRmc'->>'value' from consumers 
+	where system_id = 1 and consumer_id in (select id from tmp)
+	$$) as r(consumer_id int, affinity_brand text)
+) q 
+where r.consumer_id::int = q.consumer_id;
+select * from reports_o2o_tmp_info where ba_id is null or sex is null;
+select * from reports_o2o_tmp_info where affinity_brand is null;
+select count(survey_id) as survey_id,count(consumer_id) as consumer_id,count(trigger_action) as trigger_action,
+count("question1") as "question1",count("question2") as "question2",count("question3") as "question3",count("question4") as "question4",
+count("question5_Row 1") as "question5_Row 1",count("question5_Row 2") as "question5_Row 2",count("question5_Row 3") as "question5_Row 3",
+count("question5_Row 4") as "question5_Row 4",count("question5_Row 5") as "question5_Row 5",count("question5_Row 6") as "question5_Row 6",
+count("question5_Row 7") as "question5_Row 7",count("question6_Row1") as "question6_Row1",count("question6_Row 2") as "question6_Row 2",
+count("question6_Row 3") as "question6_Row 3",count("question6_Row 4") as "question6_Row 4",count("question6_Row 5") as "question6_Row 5",
+count("question6_Row 6") as "question6_Row 6",count("question6_Row 7") as "question6_Row 7",count("question7_Row 1") as "question7_Row 1",
+count("question7_Row 2") as "question7_Row 2",count("question8_Row 1") as "question8_Row 1",count("question8_Row 2") as "question8_Row 2",
+count("question8_Row 3") as "question8_Row 3",count("question8_Row 4") as "question8_Row 4",count("question8_Row 5") as "question8_Row 5",
+count("question9") as "question9",count("question10") as "question10",count("question11_r1") as "question11_r1",
+count("question12_r1") as "question12_r1",count("question13_r1") as "question13_r1",count("question14") as "question14",
+count("question15_r1") as "question15_r1",count("question16") as "question16",count("question17") as "question17",
+count("question18") as "question18",count("question19") as "question19",count("question20") as "question20",
+count("question21") as "question21",count("question22") as "question22",count("question23") as "question23",count("question24") as "question24",
+count("question25") as "question25",count("question26") as "question26",count("question27") as "question26"  
+from reports_o2o_tmp_info;
+alter table reports_o2o_tmp_info drop column question9;
+alter table reports_o2o_tmp_info drop column question10;
+alter table reports_o2o_tmp_info drop column question14;
+alter table reports_o2o_tmp_info drop column question16;
+alter table reports_o2o_tmp_info drop column question17;
+alter table reports_o2o_tmp_info drop column question18;
+alter table reports_o2o_tmp_info drop column question19;
+alter table reports_o2o_tmp_info drop column question20;
+alter table reports_o2o_tmp_info drop column question26;

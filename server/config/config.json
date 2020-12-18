@@ -16,12 +16,26 @@
       "algorithm": "aes256",
       "key" : "#kLo;@29O"
     },
-    "jwtSecret":"nodeauthsecret"
+    "jwtSecret":"nodeauthsecret",
+    "crms": {
+      "test": {
+        "host": "http://10.100.1.2:81",
+        "externalSystemId": "555"
+      },
+      "rrp": {
+        "host": "http://10.100.1.30:81",
+        "externalSystemId": "555"
+      },
+      "rmc": {
+        "host": "http://10.100.1.7:81",
+        "externalSystemId": "555"
+      }
+    }
   },
   "test": {
     "username": "btalpiga",
     "password": "root",
-    "database": "surveys",
+    "database": "surveys_test",
     "host": "127.0.0.1",
     "dialect": "postgres",
     "operatorsAliases":  false, 
@@ -35,7 +49,21 @@
       "algorithm": "aes256",
       "key" : "#kLo;@29O"
     },
-    "jwtSecret": "ojdS&*j3DDu_1"
+    "jwtSecret": "ojdS&*j3DDu_1",
+    "crms": {
+      "test": {
+        "host": "http://10.100.1.2:81",
+        "externalSystemId": "555"
+      },
+      "rrp": {
+        "host": "http://10.100.1.30:81",
+        "externalSystemId": "555"
+      },
+      "rmc": {
+        "host": "http://10.100.1.7:81",
+        "externalSystemId": "555"
+      }
+    }
   },
   "production": {
     "username": "btalpiga",
@@ -54,6 +82,20 @@
       "algorithm": "aes256",
       "key" : "#kLo;@29O"
     },
-    "jwtSecret": "ojdS&*j3DDu_1"
+    "jwtSecret": "ojdS&*j3DDu_1",
+    "crms": {
+      "test": {
+        "host": "http://10.100.1.2:81",
+        "externalSystemId": "555"
+      },
+      "rrp": {
+        "host": "http://10.100.1.30:81",
+        "externalSystemId": "555"
+      },
+      "rmc": {
+        "host": "http://10.100.1.7:81",
+        "externalSystemId": "555"
+      }
+    }
   }
 }
