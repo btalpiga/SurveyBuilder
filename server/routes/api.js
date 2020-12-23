@@ -664,83 +664,87 @@ router.post('/survey/generate-link-bulk',
 
 
 router.post('/survey/generate-link-2', function (req, res) {
-  let surveyId = req.body.surveyId;
-  let consumerId = req.body.consumerId;
-  let subCampaignId = req.body.subcampaignId;
-  let skuBought = req.body.skuBought;
-  let domainName = req.body.domainName;
-  let crmPlatform = req.body.crmPlatform;// one of r=rmc, l=rrp, t=test
-  let callbackPath = `${crmPlatform}/${consumerId}/${subCampaignId}`; //r/{{id_crm}}/{{subcampaign_id}}
-  let triggerEventId = req.body.triggerEventId;
-  let brand = undefined;
-  if(skuBought && skuBought.toUpperCase().startsWith('CA')){
-    brand = 'CAMEL';
-  }
-  if(skuBought && skuBought.toUpperCase().startsWith('WI')){
-    brand = 'WINSTON';
-  }
-  if(skuBought &&  skuBought.toUpperCase().startsWith('SB') || skuBought.toUpper().startsWith('SO')){
-    brand = 'SOBRANIE';
-  }
+  try {
+    let surveyId = req.body.surveyId;
+    let consumerId = req.body.consumerId;
+    let subCampaignId = req.body.subcampaignId;
+    let skuBought = req.body.skuBought;
+    let domainName = req.body.domainName;
+    let crmPlatform = req.body.crmPlatform;// one of r=rmc, l=rrp, t=test
+    let callbackPath = `${crmPlatform}/${consumerId}/${subCampaignId}`; //r/{{id_crm}}/{{subcampaign_id}}
+    let triggerEventId = req.body.triggerEventId;
+    let brand = undefined;
+    if (skuBought && skuBought.toUpperCase().startsWith('CA')) {
+      brand = 'CAMEL';
+    }
+    if (skuBought && skuBought.toUpperCase().startsWith('WI')) {
+      brand = 'WINSTON';
+    }
+    if (skuBought && skuBought.toUpperCase().startsWith('SB') || skuBought.toUpper().startsWith('SO')) {
+      brand = 'SOBRANIE';
+    }
 
-  if(!brand || ['CAMEL', 'WINSTON', 'SOBRANIE'].indexOf(brand) < 0){
-    return res.status(400).json({success: false, message: 'Unknown brand: '+brand})
-  }
+    if (!brand || ['CAMEL', 'WINSTON', 'SOBRANIE'].indexOf(brand) < 0) {
+      return res.status(400).json({ success: false, message: 'Unknown brand: ' + brand })
+    }
 
-  let statistics = {
-    consumer_id: consumerId,
-    trigger_event_id: triggerEventId,
-    params: JSON.stringify(req.body),
-    date_created: new Date(),
-    date_updated: new Date(),
-    progress: 0,
-    accessed: 0,
-    sub_campaign_id: subCampaignId,
-    flags: 1,
-    survey_id: surveyId
-  };
-  let cipher = crypto.createCipher(config.crypto.algorithm, config.crypto.key);
-  let encrypted = cipher.update(JSON.stringify({
-    consumer_id: consumerId,
-    survey_id: surveyId
-  }), 'utf8', 'hex') + cipher.final('hex');
+    let statistics = {
+      consumer_id: consumerId,
+      trigger_event_id: triggerEventId,
+      params: JSON.stringify(req.body),
+      date_created: new Date(),
+      date_updated: new Date(),
+      progress: 0,
+      accessed: 0,
+      sub_campaign_id: subCampaignId,
+      flags: 1,
+      survey_id: surveyId
+    };
+    let cipher = crypto.createCipher(config.crypto.algorithm, config.crypto.key);
+    let encrypted = cipher.update(JSON.stringify({
+      consumer_id: consumerId,
+      survey_id: surveyId
+    }), 'utf8', 'hex') + cipher.final('hex');
 
-  return Survey.findByPk(surveyId).then((survey) => {
-    if (survey.status == 2) {
-      let link = domainName + '/fill-survey/' + encrypted + '/' + consumerId;
-      let dataShortLink = {
-        apikey: 'API_KEY_HUB_R6CKNYY443D56JUH49G79H2RST8Q2WZ8',
-        url: link,
-        callbackurl: callbackPath
-      };
-      statistics.link = link;
+    return Survey.findByPk(surveyId).then((survey) => {
+      if (survey.status == 2) {
+        let link = domainName + '/fill-survey/' + encrypted + '/' + consumerId;
+        let dataShortLink = {
+          apikey: 'API_KEY_HUB_R6CKNYY443D56JUH49G79H2RST8Q2WZ8',
+          url: link,
+          callbackurl: callbackPath
+        };
+        statistics.link = link;
 
-      return axios.post('http://fr3.ro/createshortforurl',
-        qs.stringify(dataShortLink),
-        { headers: { 'Content-Type': 'application/x-www-form-urlencoded' } })
-        .then((result) => {
-          statistics.short_url = result.data.shorturl;
-          return links_statistics.create(statistics).then(() => {
-            //send action for notification to CRM
-            
-            actionExtraParams = {
-              survey_url: result.data.shorturl,
-              survey_id: surveyId,
-              brand: brand
-            }
-            return sendCrmAction(crmPlatform, consumerId, subCampaignId, actionExtraParams).then(rez=>{
-              return res.status(200).json({ success: true, link: result.data.shorturl });
+        return axios.post('http://fr3.ro/createshortforurl',
+          qs.stringify(dataShortLink),
+          { headers: { 'Content-Type': 'application/x-www-form-urlencoded' } })
+          .then((result) => {
+            statistics.short_url = result.data.shorturl;
+            return links_statistics.create(statistics).then(() => {
+              //send action for notification to CRM
+
+              actionExtraParams = {
+                survey_url: result.data.shorturl,
+                survey_id: surveyId,
+                brand: brand
+              }
+              return sendCrmAction(crmPlatform, consumerId, subCampaignId, actionExtraParams).then(rez => {
+                return res.status(200).json({ success: true, link: result.data.shorturl });
+              })
             })
           })
-        })
-    } else {
-      return res.status(200).json({ success: false, message: 'Survey not active!' });
-    }
-  })
-    .catch((error) => {
+      } else {
+        return res.status(200).json({ success: false, message: 'Survey not active!' });
+      }
+    }).catch((error) => {
       console.error(error);
       return res.status(400).send(error);
     });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).send('Internal error');
+  }
 });
 
 router.post('/survey/generate-link',
@@ -836,11 +840,11 @@ getToken = function (headers) {
 };
 
 sendCrmAction = function (crmPlatform, consumerId, subcampaignId, actionExtraParams) {
-  if(crmPlatform === 'r'){
+  if (crmPlatform === 'r') {
     crmPlatform = 'rmc'
-  }else if(crmPlatform === 'l'){
+  } else if (crmPlatform === 'l') {
     crmPlatform = 'rrp';
-  }else{
+  } else {
     crmPlatform = 'test';
   }
 
@@ -856,7 +860,7 @@ sendCrmAction = function (crmPlatform, consumerId, subcampaignId, actionExtraPar
     timestamp: moment().format('YYYY-MM-DD HH:mm:ss'),
     params: actionExtraParams
   };
-  
+
   return axios.post(endpoint, action).then(rez => {
     if (rez.data.status === 1) {
       return { success: true, result: rez.data };
