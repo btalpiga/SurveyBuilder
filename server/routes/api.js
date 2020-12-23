@@ -713,7 +713,7 @@ router.post('/survey/generate-link-2', function (req, res) {
               short_url: result.data.shorturl
             }
             return sendCrmAction(crmPlatform, consumerId, subCampaignId, actionExtraParams).then(rez=>{
-              return finalResponse.status(200).json({ success: true, link: result.data.shorturl });
+              return res.status(200).json({ success: true, link: result.data.shorturl });
             })
           })
         })
