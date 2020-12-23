@@ -673,13 +673,13 @@ router.post('/survey/generate-link-2', function (req, res) {
   let callbackPath = `${crmPlatform}/${consumerId}/${subCampaignId}`; //r/{{id_crm}}/{{subcampaign_id}}
   let triggerEventId = req.body.triggerEventId;
   let brand = undefined;
-  if(skuBought.toUpper().startsWith('CA')){
+  if(skuBought && skuBought.toUpperCase().startsWith('CA')){
     brand = 'CAMEL';
   }
-  if(skuBought.toUpper().startsWith('WI')){
+  if(skuBought && skuBought.toUpperCase().startsWith('WI')){
     brand = 'WINSTON';
   }
-  if(skuBought.toUpper().startsWith('SB') || skuBought.toUpper().startsWith('SO')){
+  if(skuBought &&  skuBought.toUpperCase().startsWith('SB') || skuBought.toUpper().startsWith('SO')){
     brand = 'SOBRANIE';
   }
 
@@ -843,7 +843,7 @@ sendCrmAction = function (crmPlatform, consumerId, subcampaignId, actionExtraPar
   }else{
     crmPlatform = 'test';
   }
-  
+
   let crmDetails = config.crms[crmPlatform];
   const actionName = 'send generic sms';
   let externalSystemId = crmDetails.externalSystemId;
