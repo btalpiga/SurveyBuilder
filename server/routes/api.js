@@ -680,7 +680,7 @@ router.post('/survey/generate-link-2', function (req, res) {
     if (skuBought && skuBought.toUpperCase().startsWith('WI')) {
       brand = 'WINSTON';
     }
-    if (skuBought && skuBought.toUpperCase().startsWith('SB') || skuBought.toUpper().startsWith('SO')) {
+    if (skuBought && (skuBought.toUpperCase().startsWith('SB') || skuBought.toUpperCase().startsWith('SO'))) {
       brand = 'SOBRANIE';
     }
 
