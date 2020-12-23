@@ -675,7 +675,7 @@ router.post('/survey/generate-link-2', function (req, res) {
   let statistics = {
     consumer_id: consumerId,
     trigger_event_id: triggerEventId,
-    params: req.body,
+    params: JSON.stringify(req.body),
     date_created: new Date(),
     date_updated: new Date(),
     progress: 0,
