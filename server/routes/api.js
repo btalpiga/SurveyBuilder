@@ -828,32 +828,32 @@ sendCrmAction = function (crmPlatform, consumerId, subcampaignId, actionExtraPar
     crmPlatform = 'test';
   }
   let crmDetails = config.crms[crmPlatform];
-  const defaultO2OSurveySubcampaign = 10000;
+  // const defaultO2OSurveySubcampaign = 10000;
   const actionName = 'send generic sms';
   let externalSystemId = crmDetails.externalSystemId;
   let endpoint = `${crmDetails.host}/api/action/add-consumer-action`;
-  const subcampaignMapping = {
-    //win
-    4603: defaultO2OSurveySubcampaign,
+  // const subcampaignMapping = {
+  //   //win
+  //   4603: defaultO2OSurveySubcampaign,
 
-    5828: defaultO2OSurveySubcampaign,
-    5827: defaultO2OSurveySubcampaign,
-    5469: defaultO2OSurveySubcampaign,
-    5621: defaultO2OSurveySubcampaign,
-    5622: defaultO2OSurveySubcampaign,
-    //sob
-    4529: defaultO2OSurveySubcampaign,
-    5607: defaultO2OSurveySubcampaign,
-    5608: defaultO2OSurveySubcampaign,
-    //cam
-    5609: defaultO2OSurveySubcampaign,
-  };
+  //   5828: defaultO2OSurveySubcampaign,
+  //   5827: defaultO2OSurveySubcampaign,
+  //   5469: defaultO2OSurveySubcampaign,
+  //   5621: defaultO2OSurveySubcampaign,
+  //   5622: defaultO2OSurveySubcampaign,
+  //   //sob
+  //   4529: defaultO2OSurveySubcampaign,
+  //   5607: defaultO2OSurveySubcampaign,
+  //   5608: defaultO2OSurveySubcampaign,
+  //   //cam
+  //   5609: defaultO2OSurveySubcampaign,
+  // };
 
   
   let action = {
     external_system_id: externalSystemId,
     consumer_id: consumerId,
-    campaign_id: subcampaignMapping[subcampaignId] || defaultO2OSurveySubcampaign,
+    campaign_id: subcampaignId,//subcampaignMapping[subcampaignId] || defaultO2OSurveySubcampaign,
     action: actionName,
     timestamp: moment().format('YYYY-MM-DD HH:mm:ss'),
     params: actionExtraParams
