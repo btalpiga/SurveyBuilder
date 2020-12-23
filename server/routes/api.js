@@ -672,6 +672,21 @@ router.post('/survey/generate-link-2', function (req, res) {
   let crmPlatform = req.body.crmPlatform;// one of r=rmc, l=rrp, t=test
   let callbackPath = `${crmPlatform}/${consumerId}/${subCampaignId}`; //r/{{id_crm}}/{{subcampaign_id}}
   let triggerEventId = req.body.triggerEventId;
+  let brand = undefined;
+  if(skuBought.toUpper().startsWith('CA')){
+    brand = 'CAMEL';
+  }
+  if(skuBought.toUpper().startsWith('WI')){
+    brand = 'WINSTON';
+  }
+  if(skuBought.toUpper().startsWith('SB') || skuBought.toUpper().startsWith('SO')){
+    brand = 'SOBRANIE';
+  }
+
+  if(!brand || ['CAMEL', 'WINSTON', 'SOBRANIE'].indexOf(brand) < 0){
+    return res.status(400).json({success: false, message: 'Unknown brand: '+brand})
+  }
+
   let statistics = {
     consumer_id: consumerId,
     trigger_event_id: triggerEventId,
@@ -707,10 +722,11 @@ router.post('/survey/generate-link-2', function (req, res) {
           statistics.short_url = result.data.shorturl;
           return links_statistics.create(statistics).then(() => {
             //send action for notification to CRM
+            
             actionExtraParams = {
-              trigger_subcampaign: subCampaignId,
-              sku_bought: skuBought,
-              short_url: result.data.shorturl
+              survey_url: result.data.shorturl,
+              survey_id: surveyId,
+              brand: brand
             }
             return sendCrmAction(crmPlatform, consumerId, subCampaignId, actionExtraParams).then(rez=>{
               return res.status(200).json({ success: true, link: result.data.shorturl });
@@ -827,33 +843,15 @@ sendCrmAction = function (crmPlatform, consumerId, subcampaignId, actionExtraPar
   }else{
     crmPlatform = 'test';
   }
+  
   let crmDetails = config.crms[crmPlatform];
-  // const defaultO2OSurveySubcampaign = 10000;
   const actionName = 'send generic sms';
   let externalSystemId = crmDetails.externalSystemId;
   let endpoint = `${crmDetails.host}/api/action/add-consumer-action`;
-  // const subcampaignMapping = {
-  //   //win
-  //   4603: defaultO2OSurveySubcampaign,
-
-  //   5828: defaultO2OSurveySubcampaign,
-  //   5827: defaultO2OSurveySubcampaign,
-  //   5469: defaultO2OSurveySubcampaign,
-  //   5621: defaultO2OSurveySubcampaign,
-  //   5622: defaultO2OSurveySubcampaign,
-  //   //sob
-  //   4529: defaultO2OSurveySubcampaign,
-  //   5607: defaultO2OSurveySubcampaign,
-  //   5608: defaultO2OSurveySubcampaign,
-  //   //cam
-  //   5609: defaultO2OSurveySubcampaign,
-  // };
-
-  
   let action = {
     external_system_id: externalSystemId,
     consumer_id: consumerId,
-    campaign_id: subcampaignId,//subcampaignMapping[subcampaignId] || defaultO2OSurveySubcampaign,
+    campaign_id: subcampaignId,
     action: actionName,
     timestamp: moment().format('YYYY-MM-DD HH:mm:ss'),
     params: actionExtraParams
