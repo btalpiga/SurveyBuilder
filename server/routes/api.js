@@ -666,14 +666,14 @@ router.post('/survey/generate-link-bulk',
 
 router.post('/survey/generate-link-2', function (req, res) {
   try {
-    let surveyId = req.body.surveyId;
-    let consumerId = req.body.consumerId;
-    let subCampaignId = req.body.subcampaignId;
+    let surveyId = parseInt(req.body.surveyId);
+    let consumerId = req.body.consumerId ? req.body.consumerId+"" : undefined;
+    let subCampaignId = req.body.subcampaignId ? req.body.subcampaignId+"" : undefined;
     let skuBought = req.body.skuBought;
     let domainName = req.body.domainName;
     let crmPlatform = req.body.crmPlatform;// one of r=rmc, l=rrp, t=test
     let callbackPath = `${crmPlatform}/${consumerId}/${subCampaignId}`; //r/{{id_crm}}/{{subcampaign_id}}
-    let triggerEventId = req.body.triggerEventId;
+    let triggerEventId = req.body.triggerEventId ? req.body.triggerEventId+"" : undefined;
     let brand = undefined;
     if (skuBought && skuBought.toUpperCase().startsWith('CA')) {
       brand = 'CAMEL';
