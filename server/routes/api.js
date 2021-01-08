@@ -11,6 +11,7 @@ const Reports = require('../models').Reports;
 const links_statistics = require('../models').links_statistics;
 const db = require('../models');
 const moment = require('moment');
+const {Op} = require('sequelize')
 
 
 
@@ -688,59 +689,73 @@ router.post('/survey/generate-link-2', function (req, res) {
       return res.status(400).json({ success: false, message: 'Unknown brand: ' + brand })
     }
 
-    let statistics = {
-      consumer_id: consumerId,
-      trigger_event_id: triggerEventId,
-      params: JSON.stringify(req.body),
-      date_created: new Date(),
-      date_updated: new Date(),
-      progress: 0,
-      accessed: 0,
-      sub_campaign_id: subCampaignId,
-      flags: 1,
-      survey_id: surveyId
-    };
-    let cipher = crypto.createCipher(config.crypto.algorithm, config.crypto.key);
-    let encrypted = cipher.update(JSON.stringify({
-      consumer_id: consumerId,
-      survey_id: surveyId
-    }), 'utf8', 'hex') + cipher.final('hex');
-
-    return Survey.findByPk(surveyId).then((survey) => {
-      if (survey.status == 2) {
-        let link = domainName + '/fill-survey/' + encrypted + '/' + consumerId;
-        let dataShortLink = {
-          apikey: 'API_KEY_HUB_R6CKNYY443D56JUH49G79H2RST8Q2WZ8',
-          url: link,
-          callbackurl: callbackPath
-        };
-        statistics.link = link;
-
-        return axios.post('http://fr3.ro/createshortforurl',
-          qs.stringify(dataShortLink),
-          { headers: { 'Content-Type': 'application/x-www-form-urlencoded' } })
-          .then((result) => {
-            statistics.short_url = result.data.shorturl;
-            return links_statistics.create(statistics).then(() => {
-              //send action for notification to CRM
-
-              actionExtraParams = {
-                survey_url: result.data.shorturl,
-                survey_id: surveyId,
-                brand: brand
-              }
-              return sendCrmAction(crmPlatform, consumerId, subCampaignId, actionExtraParams).then(rez => {
-                return res.status(200).json({ success: true, link: result.data.shorturl });
-              })
-            })
-          })
-      } else {
-        return res.status(200).json({ success: false, message: 'Survey not active!' });
+    return links_statistics.findOne({
+      where: {
+        consumer_id: consumerId,
+        survey_id: surveyId,
+        createdAt: {
+          [Op.gte]: moment().add(-6, 'month').toDate()
+        }
       }
-    }).catch((error) => {
-      console.error(error);
-      return res.status(400).send(error);
-    });
+    }).then(alreadySentInfo => {
+      if (alreadySentInfo) {
+        return res.status(200).json({ success: true, message: 'Survey for this consumer already sent!' });
+      } else {
+        let statistics = {
+          consumer_id: consumerId,
+          trigger_event_id: triggerEventId,
+          params: JSON.stringify(req.body),
+          date_created: new Date(),
+          date_updated: new Date(),
+          progress: 0,
+          accessed: 0,
+          sub_campaign_id: subCampaignId,
+          flags: 1,
+          survey_id: surveyId
+        };
+        let cipher = crypto.createCipher(config.crypto.algorithm, config.crypto.key);
+        let encrypted = cipher.update(JSON.stringify({
+          consumer_id: consumerId,
+          survey_id: surveyId
+        }), 'utf8', 'hex') + cipher.final('hex');
+
+        return Survey.findByPk(surveyId).then((survey) => {
+          if (survey.status == 2) {
+            let link = domainName + '/fill-survey/' + encrypted + '/' + consumerId;
+            let dataShortLink = {
+              apikey: 'API_KEY_HUB_R6CKNYY443D56JUH49G79H2RST8Q2WZ8',
+              url: link,
+              callbackurl: callbackPath
+            };
+            statistics.link = link;
+
+            return axios.post('http://fr3.ro/createshortforurl',
+              qs.stringify(dataShortLink),
+              { headers: { 'Content-Type': 'application/x-www-form-urlencoded' } })
+              .then((result) => {
+                statistics.short_url = result.data.shorturl;
+                return links_statistics.create(statistics).then(() => {
+                  //send action for notification to CRM
+
+                  actionExtraParams = {
+                    survey_url: result.data.shorturl,
+                    survey_id: surveyId,
+                    brand: brand
+                  }
+                  return sendCrmAction(crmPlatform, consumerId, subCampaignId, actionExtraParams).then(rez => {
+                    return res.status(200).json({ success: true, link: result.data.shorturl });
+                  })
+                })
+              })
+          } else {
+            return res.status(200).json({ success: false, message: 'Survey not active!' });
+          }
+        }).catch((error) => {
+          console.error(error);
+          return res.status(400).send(error);
+        });
+      }
+    })
   } catch (err) {
     console.error(err);
     return res.status(500).send('Internal error');
