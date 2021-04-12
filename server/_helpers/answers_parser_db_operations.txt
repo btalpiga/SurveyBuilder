@@ -12,6 +12,7 @@ join links_statistics ls on ls.consumer_id = a.consumer_id and ls.survey_id = a.
 where a.\"createdAt\" <= date(now()) and a.progress::double precision = 100
 and s.id = 4
 order by survey_name desc, consumer_id) to '/tmp/infoLine_121_answers.txt' delimiter '^'";
+
 --run node script parser
 create table reports_o2o_tmp_ba (survey_id text,consumer_id text,trigger_action text,"question1" text,"question2" text,"question3" text,"question4" text,"question5_Row 1" text,"question5_Row 2" text,"question5_Row 3" text,"question5_Row 4" text,"question5_Row 5" text,"question5_Row 6" text,"question5_Row 7" text,"question6_Row 1" text,"question6_Row 2" text,"question6_Row 3" text,"question6_Row 4" text,"question6_Row 5" text,"question6_Row 6" text,"question6_Row 7" text,"question7_Row 1" text,"question7_Row 2" text,"question7_Row 3" text,"question8_Row 1" text,"question8_Row 2" text,"question8_Row 3" text,"question8_Row 4" text,"question8_Row 5" text,"question9" text,"question10_Row 1" text,"question10_Row 2" text,"question10_Row 3" text,"question10_Row 4" text,"question10_Row 5" text,"question10_Row 6" text,"question11_r1" text,"question12_r1" text,"question13_r1" text,"question14" text,"question15_r1" text,"question16" text,"question17" text,"question18" text,"question19" text,"question20" text,"question21" text,"question22" text,"question23" text,"question24" text,"question25" text,"question26" text,"question27" text);
 psql -U btalpiga -h localhost -d hcrm -c "\copy reports_o2o_tmp_ba from '/tmp/ba_121_report.csv' csv delimiter '^' header";

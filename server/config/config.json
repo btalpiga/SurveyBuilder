@@ -27,7 +27,7 @@
         "externalSystemId": "555"
       },
       "rmc": {
-        "host": "http://10.100.1.7:81",
+        "host": "http://10.100.1.29:81",
         "externalSystemId": "555"
       }
     }
@@ -60,7 +60,7 @@
         "externalSystemId": "555"
       },
       "rmc": {
-        "host": "http://10.100.1.7:81",
+        "host": "http://10.100.1.29:81",
         "externalSystemId": "555"
       }
     }
@@ -93,7 +93,7 @@
         "externalSystemId": "555"
       },
       "rmc": {
-        "host": "http://10.100.1.7:81",
+        "host": "http://10.100.1.29:81",
         "externalSystemId": "555"
       }
     }

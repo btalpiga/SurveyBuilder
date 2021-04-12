@@ -12,6 +12,12 @@
                 "<node_internals>/**"
             ],
             "program": "${workspaceFolder}/server/_helpers/answers_parser.js"
+        },
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "DebugScripts",
+            "program": "/home/btalpiga/Desktop/investing_script.js"
         }
     ]
 }
